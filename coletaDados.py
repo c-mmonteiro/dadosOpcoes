@@ -23,6 +23,16 @@ class dadosOpcoes:
 
         mt5.initialize()
 
+        if (not mt5.market_book_add(self.ativo)):
+            print(f'ALERTA: O ativo {self.ativo} não pode ser adicionado!')
+        else:
+            time.sleep(0.1)                            
+            ticks_base = mt5.copy_ticks_range(self.ativo, utc_from, utc_to, mt5.COPY_TICKS_TRADE)
+
+            ticks_base_frame = pd.DataFrame(ticks_base)
+
+            mt5.market_book_release(self.ativo)
+
         self.listaSimbolos = mt5.symbols_get(self.ativo[0:4])
 
         num_symb = len(self.listaSimbolos)
@@ -37,53 +47,43 @@ class dadosOpcoes:
             else:
                 papel_info = mt5.symbol_info(papel)
 
-                if ((papel_info.option_strike > 0) and (papel_info.option_right == 0) and (papel_info.option_mode == 0)):
+                base = papel_info.basis
+
+                if ((base == self.ativo) and (papel_info.option_strike > 0) and 
+                (papel_info.option_right == 0) and (papel_info.option_mode == 0)):
                     
-                    ticks = mt5.copy_ticks_range(papel, utc_from, utc_to, mt5.COPY_TICKS_ALL)
+                    ticks = mt5.copy_ticks_range(papel, utc_from, utc_to, mt5.COPY_TICKS_TRADE)
                     # create DataFrame out of the obtained data
                     ticks_frame = pd.DataFrame(ticks)
-                    # convert time in seconds into the datetime format
-                    ticks_frame['time']=pd.to_datetime(ticks_frame['time'], unit='s')
 
-                    ticks_frame = ticks_frame[ticks_frame['last'] > 0]
+                    ticks_frame = ticks_frame[ticks_frame['last'] > 0]  
 
-                    
+                    for idx, tick_time in enumerate(ticks_frame['time']):
 
-                    base = papel_info.basis
+                        sub = 0
+                        while True:
+                            tick_base = ticks_base_frame[ticks_base_frame['time'] == tick_time - sub]
 
-                    mt5.market_book_release(papel)
+                            if len(tick_base) > 0:
+                                break
+                            elif (sub < 20):
+                                sub = sub + 1
+                            else:
+                                break
+                        if (sub != 20):
 
-                    if (not mt5.market_book_add(base)):
-                        print(f'ALERTA: O ativo {base} não pode ser adicionado!')
-                    else:
-                        time.sleep(0.1)
-                        for idx, tick_time in enumerate(ticks_frame['time']):
-                            
-                            tick_base = mt5.copy_ticks_from(base, tick_time, 1, mt5.COPY_TICKS_ALL)
-
-                            vencimento = pd.to_datetime(papel_info.expiration_time, unit='s') - ticks_frame.loc[ticks_frame.iloc[idx].name]['time'] 
+                            vencimento = pd.to_datetime(papel_info.expiration_time, unit='s') - pd.to_datetime(ticks_frame.loc[ticks_frame.iloc[idx].name]['time'], unit='s')
 
                             self.opcoes = self.opcoes.append(
                                         {"Strike": papel_info.option_strike, "Premio": ticks_frame.loc[ticks_frame.iloc[idx].name]['last'],
-                                        "Tempo de Vida": vencimento.days, "Preco Acao": tick_base[0]['last']}, ignore_index=True)
-
-
-                            tick_base_frame = pd.DataFrame(tick_base)
-                            if idx == 0:
-                                ticks_base_frame = tick_base_frame
-                            else:
-                                ticks_base_frame = pd.concat([ticks_base_frame, tick_base_frame])
-
-                        # convert time in seconds into the datetime format
-                        ticks_base_frame['time']=pd.to_datetime(ticks_base_frame['time'], unit='s')
-
-                        mt5.market_book_release(base)
-
-                        self.opcoes = self.opcoes.drop_duplicates()
+                                        "Tempo de Vida": vencimento.days, "Preco Acao": tick_base['last'].to_list()[0]}, ignore_index=True)
+                        else:
+                            print(f'ALERTA: Problema na cotação do ativo base.')
+                   
             print(len(self.opcoes))
         mt5.shutdown()
 
-        self.opcoes.to_csv('2023_01_20_10dias_CALL_EU.csv')
+        self.opcoes.to_csv('2023_01_20_10dias_CALL_EU_v2.csv')
 
             
 
