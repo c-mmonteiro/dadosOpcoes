@@ -4,8 +4,6 @@ from datetime import datetime, timedelta
 import pytz
 import time
 
-import matplotlib.pyplot as plt
-
 class dadosOpcoes:
     def __init__(self, ativo) -> None:
 
