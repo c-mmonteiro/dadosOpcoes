@@ -14,8 +14,9 @@ IMPORTANTE: Necessário ter o Metatrader 5 instalado e rodando em uma corretora
 -------------------
 Uso:
 
-1. Rodar o arquivo app.py
-2. Abrir um navegador e acessar a página http://127.0.0.1:8050/
+1. Modificar a data do dia no arquivo monitoraOpcoes.py (linha 19)
+2. Rodar o arquivo app.py
+3. Abrir um navegador e acessar a página http://127.0.0.1:8050/
 
 
 ------------------
