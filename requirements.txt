@@ -8,3 +8,4 @@ numpy==1.23.3
 
 plotly==5.11.0
 dash==2.7.1
+tensorflow
