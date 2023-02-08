@@ -9,6 +9,8 @@ A IA utilizada é uma RN contendo 3 camadas ocultas do tipo ReLu e uma camada de
 
 Intalação: rodar o arquivo requirements.txt
 
+pip install -r requirements.txt
+
 IMPORTANTE: Necessário ter o Metatrader 5 instalado e rodando em uma corretora
 
 -------------------
