@@ -18,7 +18,7 @@ Possivelmente deverá ter que instalar https://learn.microsoft.com/pt-br/cpp/win
 -------------------
 Uso:
 
-1. Modificar a data do dia no arquivo monitoraOpcoes.py (linha 19)
+1. Modificar a data do vencimento da opção no arquivo monitoraOpcoes.py (linha 18)
 2. Rodar o arquivo app.py
 3. Abrir um navegador e acessar a página http://127.0.0.1:8050/
 
