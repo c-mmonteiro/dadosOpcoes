@@ -56,8 +56,6 @@ class monitoraOpcoes:
             mt5.symbol_select(papel, False)
         mt5.shutdown()
 
-        print(self.opcoes)
-
         self.opcoes = self.opcoes.sort_values(by="Strike")
         self.opcoes = self.opcoes.reset_index()
         self.opcoes.drop(['index'], axis=1, inplace=True)
