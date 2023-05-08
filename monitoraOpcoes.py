@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 import MetaTrader5 as mt5
-
+from datetime import datetime, date
 import time
 import pytz
 
@@ -15,10 +15,10 @@ class monitoraOpcoes:
         self.ativo = "PETR4"
 
         self.timezone = pytz.timezone('America/Sao_Paulo')
-        self.validade = pd.datetime(2023, 2, 17)#, tzinfo=self.timezone)
-        self.hoje = pd.datetime(2023, 1, 25) #pd.datetime.today()
-
-        self.dias_restante = self.validade - self.hoje
+        self.validade = datetime.strptime("19-05-2023", "%d-%m-%Y")
+        self.hoje = datetime.combine(date.today(), datetime.min.time())
+     
+        self.dias_restante = (self.validade - self.hoje).days
 
 
         self.min_strike = min_strike
@@ -45,18 +45,18 @@ class monitoraOpcoes:
 
                 papel_validade = pd.to_datetime(papel_info.expiration_time, unit='s') - self.hoje
 
-
-
                 if ((papel_info.basis == self.ativo) and 
                 (papel_info.option_strike > self.min_strike) and 
                 (papel_info.option_strike < self.max_strike) and
-                (papel_validade.days == self.dias_restante.days) and
+                (papel_validade.days == self.dias_restante) and
                 (papel_info.option_right == 0) and (papel_info.option_mode == 0)):
-                    self.opcoes = self.opcoes.append(
-                                        {"Codigo": papel,
-                                        "Strike": papel_info.option_strike}, ignore_index=True)
+                    self.opcoes = pd.concat([self.opcoes, pd.Series({"Codigo": papel,
+                                "Strike": papel_info.option_strike}).to_frame().T], ignore_index=True)
+                    
             mt5.symbol_select(papel, False)
         mt5.shutdown()
+
+        print(self.opcoes)
 
         self.opcoes = self.opcoes.sort_values(by="Strike")
         self.opcoes = self.opcoes.reset_index()
@@ -81,16 +81,16 @@ class monitoraOpcoes:
             if (not mt5.symbol_select(op, True)):
                 print(f'ALERTA: O ativo {self.ativo} não pode ser adicionado!')
             else:
-                X_test = np.array([[self.opcoes['Strike'][idx], self.dias_restante.days, tick_base.last]])
+                X_test = np.array([[self.opcoes['Strike'][idx], self.dias_restante, tick_base.last]])
                 y_test = self.model.predict(X_test)
 
                 tick_opcao = mt5.symbol_info_tick(op)
 
-                self.premio = self.premio.append(
-                                        {"Ultimo": tick_opcao.last,
+                self.premio = pd.concat([self.premio, pd.Series({"Ultimo": tick_opcao.last,
                                         "Compra": tick_opcao.bid,
                                         "Venda": tick_opcao.ask,
-                                        "IA": y_test[0][0]}, ignore_index=True)
+                                        "IA": y_test[0][0]}).to_frame().T], ignore_index=True)
+
             mt5.symbol_select(op, False) 
 
         resultado = pd.merge(self.opcoes, self.premio, left_index = True, right_index = True, how = "inner")
