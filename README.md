@@ -13,6 +13,8 @@ pip install -r requirements.txt
 
 IMPORTANTE: Necessário ter o Metatrader 5 instalado e rodando em uma corretora
 
+Possivelmente deverá ter que instalar https://learn.microsoft.com/pt-br/cpp/windows/latest-supported-vc-redist?view=msvc-170
+
 -------------------
 Uso:
 
