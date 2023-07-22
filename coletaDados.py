@@ -13,8 +13,8 @@ class dadosOpcoes:
         self.hoje = datetime.today()
 
 
-        utc_from = datetime(2023, 1, 11, tzinfo=self.timezone)
-        utc_to = datetime(2023, 1, 21, tzinfo=self.timezone)
+        utc_from = datetime(2023, 6, 21, tzinfo=self.timezone)
+        utc_to = datetime(2023, 7, 21, tzinfo=self.timezone)
 
         #Pegar apenas CALL Européia
         self.opcoes = pd.DataFrame(columns=['Strike', 'Premio', 'Tempo de Vida', 'Preco Acao'])
@@ -78,11 +78,13 @@ class dadosOpcoes:
                         else:
                             print(f'ALERTA: Problema na cotação do ativo base.')
                    
+            mt5.market_book_release(papel)
+            mt5.symbol_select(papel, False)
             print(len(self.opcoes))
         mt5.shutdown()
 
-        self.opcoes.to_csv('2023_01_20_10dias_CALL_EU_v2.csv')
+        self.opcoes.to_csv(utc_to.strftime('%Y_%m_%d') + '_30dias_CALL_EU_' + ativo + '.csv')
 
             
-
+#Ajustar os dias de inicio e final também!
 dadosOpcoes('PETR4')
