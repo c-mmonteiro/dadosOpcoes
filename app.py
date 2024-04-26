@@ -11,16 +11,26 @@ from datetime import datetime
 
 from monitoraOpcoes import *
 
+
 app = Dash(__name__)
 
 monitor = monitoraOpcoes(24.5,28)
-dados, base_last = monitor.atualiza()
+dados, base_last, prob = monitor.atualiza()
 
 fig = make_subplots(rows=1, cols=1, subplot_titles=('Plot 1'))
 fig.add_trace(go.Line(x=dados["Strike"], y=dados["IA"], name="IA", line=dict(color='black')))
 fig.add_trace(go.Line(x=dados["Strike"], y=dados["Compra"], name="Compra", line=dict(color='red')))
 fig.add_trace(go.Line(x=dados["Strike"], y=dados["Venda"], name="Venda", line=dict(color='green')))
 fig.add_trace(go.Line(x=dados["Strike"], y=dados["Ultimo"], name="Ultimo", line=dict(color='blue')))
+#Monta a string de data
+now = datetime.now()
+date_time = now.strftime("%d/%m/%Y, %H:%M:%S")
+#Monta o grafico de volatilidade
+fig_vol = make_subplots(rows=1, cols=1, subplot_titles=('Volatilidade'))
+fig_vol.add_trace(go.Line(x=dados["Strike"], y=dados["VolImp"]))
+#Monta o grafico de probbilidade
+fig_prob = make_subplots(rows=1, cols=1, subplot_titles=('Probabilidade'))
+fig_prob.add_trace(go.Line(x=prob["Strike"], y=prob["Probabilidade"]))
 
 app.layout = html.Div(children=[
     html.Div(children=[
@@ -43,11 +53,20 @@ app.layout = html.Div(children=[
         figure=fig
     ),
     html.Div(
-        id='div-hora'
+        id='div-hora',
+        children=[date_time]
+    ),
+    dcc.Graph(
+        id='prob-graph',
+        figure = fig_prob
+    ),
+    dcc.Graph(
+        id='vol-graph',
+        figure = fig_vol
     ),
     dcc.Interval(
         id='interval-component',
-        interval=20*1000, # in milliseconds
+        interval=30*1000, # in milliseconds
         n_intervals=0
     )
 ])
@@ -56,6 +75,8 @@ app.layout = html.Div(children=[
 @app.callback(
     Output('example-graph', 'figure'),
     Output('div-hora', 'children'),
+    Output('prob-graph', 'figure'),
+    Output('vol-graph', 'figure'),
     Input('interval-component', 'n_intervals'),
     Input('button', 'n_clicks'),
     State('textarea-min-strike', 'value'),
@@ -69,18 +90,26 @@ def interval_update(intervalo, n_click, min, max):
 
     if trig == 'button':
         monitor = monitoraOpcoes(float(min),float(max))
-    
-    dados, base_last = monitor.atualiza()
-    fig = make_subplots(rows=1, cols=1, subplot_titles=('Plot 1'))
+    #Atualiza os dados
+    dados, base_last, prob = monitor.atualiza()
+    #Monta a figura de preços
+    fig = make_subplots(rows=1, cols=1, subplot_titles=('Preço'))
     fig.add_trace(go.Line(x=dados["Strike"], y=dados["Compra"], name="Compra", line=dict(color='red')))
     fig.add_trace(go.Line(x=dados["Strike"], y=dados["Ultimo"], name="Ultimo", line=dict(color='blue')))
     fig.add_trace(go.Line(x=[base_last, base_last], y=[dados["IA"].min(), dados["IA"].max()] , name="Ativo", line=dict(color='red')))
     fig.add_trace(go.Line(x=dados["Strike"], y=dados["IA"], name="IA", line=dict(color='black')))
     fig.add_trace(go.Line(x=dados["Strike"], y=dados["Venda"], name="Venda", line=dict(color='green')))
+    #Monta a string de data
     now = datetime.now()
     date_time = now.strftime("%d/%m/%Y, %H:%M:%S")
+    #Monta o grafico de volatilidade
+    fig_vol = make_subplots(rows=1, cols=1, subplot_titles=('Volatilidade'))
+    fig_vol.add_trace(go.Line(x=dados["Strike"], y=dados["VolImp"]))
+    #Monta o grafico de probbilidade
+    fig_prob = make_subplots(rows=1, cols=1, subplot_titles=('Probabilidade'))
+    fig_prob.add_trace(go.Line(x=prob["Strike"], y=prob["Probabilidade"]))
     
-    return fig, date_time
+    return fig, date_time, fig_prob, fig_vol
 
 
 

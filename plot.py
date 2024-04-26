@@ -2,11 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 dados = pd.read_csv('2023_01_20_10dias_CALL_EU_v2.csv')
+
+
 dados.head()
 
-dados.drop(["Idx"], axis=1, inplace=True)
-
-print(dados)
 
 strike = dados['Preco Acao'].to_list()
 strike = list(dict.fromkeys(strike))

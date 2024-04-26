@@ -13,8 +13,8 @@ class dadosOpcoes:
         self.hoje = datetime.today()
 
 
-        utc_from = datetime(2023, 6, 21, tzinfo=self.timezone)
-        utc_to = datetime(2023, 7, 21, tzinfo=self.timezone)
+        utc_from = datetime(2023, 8, 18, tzinfo=self.timezone)
+        utc_to = datetime(2023, 9, 15, tzinfo=self.timezone)
 
         #Pegar apenas CALL Européia
         self.opcoes = pd.DataFrame(columns=['Strike', 'Premio', 'Tempo de Vida', 'Preco Acao'])
@@ -88,3 +88,9 @@ class dadosOpcoes:
             
 #Ajustar os dias de inicio e final também!
 dadosOpcoes('PETR4')
+dadosOpcoes('BBAS3')
+dadosOpcoes('BOVA11')
+dadosOpcoes('VALE3')
+dadosOpcoes('RAIL3')
+dadosOpcoes('ITSA4')
+dadosOpcoes('EGIE3')

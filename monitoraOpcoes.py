@@ -10,13 +10,16 @@ import pytz
 import numpy as np
 from keras.models import load_model
 
+from blackScholes.bs import *
+
 class monitoraOpcoes:
     def __init__(self, min_strike, max_strike):
         self.ativo = "PETR4"
+        self.selic = (((1 + 0.1375) ** (1 / 12)) - 1)
 
         self.timezone = pytz.timezone('America/Sao_Paulo')
-        self.validade = pd.datetime(2023, 2, 17)#, tzinfo=self.timezone)
-        self.hoje = pd.datetime(2023, 1, 25) #pd.datetime.today()
+        self.validade = pd.datetime(2023, 3, 17)#, tzinfo=self.timezone)
+        self.hoje = pd.datetime(2023, 2, 24) #pd.datetime.today()
 
         self.dias_restante = self.validade - self.hoje
 
@@ -66,7 +69,7 @@ class monitoraOpcoes:
 
     def atualiza(self):
 
-        self.premio = pd.DataFrame(columns=['Ultimo', 'Compra', 'Venda', 'IA'])
+        self.premio = pd.DataFrame(columns=['Codigo', 'Strike', 'Ultimo', 'Compra', 'Venda', 'IA', 'VolImp'])
 
         mt5.initialize()
 
@@ -84,18 +87,40 @@ class monitoraOpcoes:
                 X_test = np.array([[self.opcoes['Strike'][idx], self.dias_restante.days, tick_base.last]])
                 y_test = self.model.predict(X_test)
 
+                vol = bs().call_implied_volatility(y_test, tick_base.last, self.opcoes['Strike'][idx], self.dias_restante.days/365, self.selic)
+
                 tick_opcao = mt5.symbol_info_tick(op)
 
                 self.premio = self.premio.append(
-                                        {"Ultimo": tick_opcao.last,
+                                        {"Codigo": self.opcoes['Codigo'][idx],
+                                        "Strike": self.opcoes['Strike'][idx],
+                                        "Ultimo": tick_opcao.last,
                                         "Compra": tick_opcao.bid,
                                         "Venda": tick_opcao.ask,
-                                        "IA": y_test[0][0]}, ignore_index=True)
+                                        "IA": y_test[0][0],
+                                        "VolImp": vol}, ignore_index=True)
             mt5.symbol_select(op, False) 
 
-        resultado = pd.merge(self.opcoes, self.premio, left_index = True, right_index = True, how = "inner")
+        #resultado = pd.merge(self.opcoes, self.premio, left_index = True, right_index = True, how = "inner")
+        resultado = self.premio
 
-        return resultado, tick_base.last
+        probabilidade = pd.DataFrame(columns=['Strike', 'Probabilidade'])
+
+        for idx, aux in enumerate(resultado['Strike']):
+            if not (idx == len(resultado) - 1):
+                v2 = (resultado['VolImp'][idx] + resultado['VolImp'][idx + 1]) / 2
+
+                s2 = (resultado['Strike'][idx] + resultado['Strike'][idx + 1]) / 2
+                s = abs(resultado['Strike'][idx] - resultado['Strike'][idx + 1]) / 2
+                c2 = round(bs().bs_call(tick_base.last, s2, self.dias_restante.days/365, self.selic, v2), 3)
+
+                g = exp(self.selic * (self.dias_restante.days/365)) * (resultado['IA'][idx] + resultado['IA'][idx + 1] - 2 * c2) / (s ** 2)
+
+                probabilidade = probabilidade.append(
+                    {"Strike": s2, "Probabilidade": abs(g)}, ignore_index=True)
+        print('Finalizou')
+
+        return resultado, tick_base.last, probabilidade
 
 
         #plt.plot([tick_base.last, tick_base.last], [self.premio.min(), self.premio.max()])
