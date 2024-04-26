@@ -13,8 +13,8 @@ class dadosOpcoes:
         self.hoje = datetime.today()
 
 
-        utc_from = datetime(2023, 8, 18, tzinfo=self.timezone)
-        utc_to = datetime(2023, 9, 15, tzinfo=self.timezone)
+        utc_from = datetime(2023, 6, 21, tzinfo=self.timezone)
+        utc_to = datetime(2023, 7, 21, tzinfo=self.timezone)
 
         #Pegar apenas CALL Européia
         self.opcoes = pd.DataFrame(columns=['Strike', 'Premio', 'Tempo de Vida', 'Preco Acao'])
@@ -80,9 +80,12 @@ class dadosOpcoes:
                    
             mt5.market_book_release(papel)
             mt5.symbol_select(papel, False)
+            mt5.market_book_release(papel)
+            mt5.symbol_select(papel, False)
             print(len(self.opcoes))
         mt5.shutdown()
 
+        self.opcoes.to_csv(utc_to.strftime('%Y_%m_%d') + '_30dias_CALL_EU_' + ativo + '.csv')
         self.opcoes.to_csv(utc_to.strftime('%Y_%m_%d') + '_30dias_CALL_EU_' + ativo + '.csv')
 
             
